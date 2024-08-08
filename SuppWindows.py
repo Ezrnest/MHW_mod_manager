@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton, QHBoxLayout, QTextEdit, QL
     QFileDialog, QSizePolicy, QCheckBox
 
 import MHWData
-from ModManagerCore import ManagerCore, ppInfoDecode, 部位ID_名称_map, ppInfoEncode
+from ManagerCore import ManagerCore, ppInfoDecode, 部位ID_名称_map, ppInfoEncode
 
 
 class InputDialog(QDialog):

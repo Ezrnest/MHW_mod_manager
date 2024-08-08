@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
                              QProgressDialog, QFileDialog, QLabel, QMessageBox, QRadioButton)
 
 from MHW.MHWData import PL_MAPPING
-from ModManagerCore import *
+from ManagerCore import *
 
 
 

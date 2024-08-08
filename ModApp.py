@@ -14,9 +14,9 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QPoint
 
 import MHWData
-from QialogWindows import SelectorDialog, InputDialog, SelectorDetailedListDialog, LoadedModsDetailDialog, \
+from SuppWindows import SelectorDialog, InputDialog, SelectorDetailedListDialog, LoadedModsDetailDialog, \
     ModEditorWindow, CheckboxTableWidgetItem, buildPlSelectionDialog, ModMixerWindow, buildPresetSelectionDialog
-from ModManagerCore import ManagerCore, 部位ID_路径_map, 部位ID_名称_map, ppInfoDecode, ppInfoEncode
+from ManagerCore import ManagerCore, 部位ID_路径_map, 部位ID_名称_map, ppInfoDecode, ppInfoEncode
 
 # noinspection PyUnresolvedReferences
 import resources_rc
@@ -164,7 +164,7 @@ class ModManagerApp(QMainWindow):
             for i, en in enumerate(mods.items()):
                 name, mod = en
                 replacements = mod["pl_info"]["rep"].values()
-                from ModManagerCore import ppInfoDecode
+                from ManagerCore import ppInfoDecode
                 replacements = [ppInfoDecode(text) for text in replacements]
                 if len(set([(x[0], x[1]) for x in replacements])) == 1:
                     pl_info_text = man.formatPlInfo(replacements[0][:2], details=False)
@@ -261,7 +261,7 @@ class ModManagerApp(QMainWindow):
         root_folder = QFileDialog.getExistingDirectory(self, "选择狩技盒子文件夹")
         if not root_folder:
             return
-        from ModManagerCore import find_mods_from_shouji
+        from ManagerCore import find_mods_from_shouji
         mod_infos = find_mods_from_shouji(root_folder)
         text = f"找到{len(mod_infos)}个模组：\n"
         for name, folder in mod_infos:

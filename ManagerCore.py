@@ -14,7 +14,7 @@ import json
 import vdf
 from sortedcontainers import SortedSet
 
-from FileTypes import MRL3File, EPV3File, FileSystemZipWrapper, SevenZipZipWrapper
+from FileTools import MRL3File, EPV3File, FileSystemZipWrapper, SevenZipZipWrapper
 
 部位ID_名称_map = {0: '头盔', 1: '身体', 2: '护手', 3: '腰部', 4: '护腿'}
 部位ID_路径_map = {0: 'helm', 1: 'body', 2: 'arm', 3: 'wst', 4: 'leg'}
