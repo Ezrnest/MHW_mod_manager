@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Miyu.ico</file>
+    </qresource>
+</RCC>
