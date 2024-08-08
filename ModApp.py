@@ -22,6 +22,7 @@ from ManagerCore import ManagerCore, ppInfoDecode, ppInfoEncode
 import resources_rc
 
 
+
 class ModManagerApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -168,8 +169,11 @@ class ModManagerApp(QMainWindow):
                 replacements = [ppInfoDecode(text) for text in replacements]
                 if len(set([(x[0], x[1]) for x in replacements])) == 1:
                     pl_info_text = man.formatPlInfo(replacements[0][:2], details=False)
+                    if len(replacements) != 5:
+                        part_info_text = ",".join(MHWData.部位ID_名称_map[pp[2]][:1] for pp in replacements)
+                        pl_info_text += f"({part_info_text})"
                 else:
-                    pl_info_text = " ".join([man.formatPPInfo(pp, details=False) for pp in replacements])
+                    pl_info_text = ",".join([man.formatPPInfo(pp, details=False) for pp in replacements])
 
                 checkbox = QCheckBox()
                 checkbox.setChecked(mod.get("loaded", False))
