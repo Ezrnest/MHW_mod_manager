@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMessageBox, QPushButton, QHBoxLayout, QTextEdit, QL
     QFileDialog, QSizePolicy, QCheckBox
 
 import MHWData
-from ManagerCore import ManagerCore, ppInfoDecode, 部位ID_名称_map, ppInfoEncode
+from ManagerCore import ManagerCore, ppInfoDecode, ppInfoEncode
 
 
 class InputDialog(QDialog):
@@ -161,6 +161,7 @@ class SelectorDetailedListDialog(QDialog):
 
     def __init__(self, item_list, title="选择"):
         super().__init__()
+        self.button_delete = None
         self.setWindowTitle(title)
         self.list: QListWidget = None
         self.item_list = item_list
@@ -191,7 +192,9 @@ class SelectorDetailedListDialog(QDialog):
         detail_widget.setReadOnly(True)
         detail_layout.addWidget(detail_widget)
         button_delete = QPushButton("删除选中", self)
+        button_delete.setEnabled(False)
         button_delete.clicked.connect(self.delete_item)
+        self.button_delete = button_delete
         detail_layout.addWidget(button_delete)
 
         h_layout.addLayout(detail_layout)
@@ -212,6 +215,7 @@ class SelectorDetailedListDialog(QDialog):
         self.setLayout(layout)
 
         self.detail_widget = detail_widget
+        select_button.setFocus()
 
     def initList(self):
         for k, v, d in self.item_list:
@@ -225,12 +229,14 @@ class SelectorDetailedListDialog(QDialog):
     def show_details(self, item):
         k, d = item.data(Qt.UserRole)
         self.detail_widget.setText(d)
+        self.button_delete.setEnabled(True)
 
     def delete_item(self):
         if self.list.currentItem() is None:
             return
         self.list.takeItem(self.list.currentRow())
         self.new_list.pop(self.list.currentRow())
+        self.button_delete.setEnabled(False)
 
     def get_select(self):
         if self.list.currentItem() is None:
@@ -301,7 +307,7 @@ class LoadedModsDetailDialog(QWidget):
 
                 table.insertRow(row)
                 table.setItem(row, 0, QTableWidgetItem(mod_name))
-                table.setItem(row, 1, QTableWidgetItem(部位ID_名称_map[pp_info[2]]))
+                table.setItem(row, 1, QTableWidgetItem(MHWData.部位ID_名称_map[pp_info[2]]))
                 if rep_info is None:
                     rep_info = "无"
                 else:
@@ -324,16 +330,18 @@ def buildPlSelectionDialog(core: ManagerCore, title="选择替换装备"):
     dialog = SelectorDialog(sel_terms, title, after_selection=lambda sel, c=core: c.addRecentPl(sel))
     return dialog
 
+
 def buildPresetSelectionDialog(core: ManagerCore, title="选择预设"):
     presets = core.getPresetSuite()
     item_list = []
     for t in presets:
         name = t.get("name", "未命名")
         target_list = [ppInfoDecode(pp) for pp in t["target"]]
-        detail_text = "\n".join([f"{部位ID_名称_map[pp[2]]}：{core.formatPPInfo(pp)}" for pp in target_list])
+        detail_text = "\n".join([f"{MHWData.部位ID_名称_map[pp[2]]}：{core.formatPPInfo(pp)}" for pp in target_list])
         item_list.append((t, name, detail_text))
     dialog = SelectorDetailedListDialog(item_list, title)
     return dialog
+
 
 class ModEditorWindow(QDialog):
     def __init__(self, mod_name: str, core: ManagerCore, parent=None):
@@ -424,7 +432,7 @@ class ModEditorWindow(QDialog):
             row = table.rowCount()
 
             table.insertRow(row)
-            item0 = QTableWidgetItem(部位ID_名称_map[src_pp_info[2]])
+            item0 = QTableWidgetItem(MHWData.部位ID_名称_map[src_pp_info[2]])
             item0.setFlags(item0.flags() & ~Qt.ItemIsEditable)
             item0.setData(Qt.UserRole, src_pp_info)
             table.setItem(row, 0, item0)
@@ -466,7 +474,7 @@ class ModEditorWindow(QDialog):
             part = self.table.item(row, 0).data(Qt.UserRole)[2]
             table = [(k, f"{v}({k})") for k, v in MHWData.PP_MAPPING[part].items()]
             selection_items = [("性别", "radio", [("m", "男"), ("f", "女")]),
-                               (f"替换{部位ID_名称_map[part]}", "list", table)]
+                               (f"替换{MHWData.部位ID_名称_map[part]}", "list", table)]
             dialog = SelectorDialog(selection_items, "选择替换装备")
         else:
             dialog = buildPlSelectionDialog(self.core)
@@ -487,13 +495,13 @@ class ModEditorWindow(QDialog):
         try:
             core = self.core
             target = []
-            for i in range(5):
+            for i in range(self.table.rowCount()):
                 pp_info = self.table.item(i, 1).data(Qt.UserRole)
                 if pp_info is not None:
                     target.append(pp_info)
             print(target)
             # a dialog to input the name
-            detail_text = "\n".join([f"{部位ID_名称_map[pp[2]]}：{core.formatPPInfo(pp)}" for pp in target])
+            detail_text = "\n".join([f"{MHWData.部位ID_名称_map[pp[2]]}：{core.formatPPInfo(pp)}" for pp in target])
             dialog = InputDialog("输入预设保存名称", details=detail_text)
             if dialog.exec_() != QDialog.Accepted:
                 return
@@ -602,10 +610,10 @@ class ModMixerWindow(QWidget):
         table = self.table
         # make the table read only
         table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.table.setRowCount(len(部位ID_名称_map))
+        self.table.setRowCount(len(MHWData.部位ID_名称_map))
         # do not show the row number
         table.verticalHeader().setVisible(False)
-        for i, v in 部位ID_名称_map.items():
+        for i, v in MHWData.部位ID_名称_map.items():
             item = QTableWidgetItem(v)
             table.setItem(i, 0, item)
             table.setItem(i, 1, QTableWidgetItem(""))
@@ -684,7 +692,7 @@ class ModMixerWindow(QWidget):
         table = [(mod_name, mod_name) for mod_name in self.core.getModDict().keys()]
         if len(selected_rows) == 1:
             part = next(iter(selected_rows))
-            name = f"替换{部位ID_名称_map[part]}"
+            name = f"替换{MHWData.部位ID_名称_map[part]}"
             # for name, info in self.core.getModDict().items():
             #     sources = info['pl_info']['source']
             #     if len(sources) == 1:
@@ -709,7 +717,7 @@ class ModMixerWindow(QWidget):
             part = next(iter(selected_rows))
             table = [(k, f"{v}({k})") for k, v in MHWData.PP_MAPPING[part].items()]
             selection_items = [("性别", "radio", [("m", "男"), ("f", "女")]),
-                               (f"替换{部位ID_名称_map[part]}", "list", table)]
+                               (f"替换{MHWData.部位ID_名称_map[part]}", "list", table)]
             dialog = SelectorDialog(selection_items, "选择替换装备")
         else:
             dialog = buildPlSelectionDialog(self.core)
@@ -745,13 +753,13 @@ class ModMixerWindow(QWidget):
         try:
             core = self.core
             target = []
-            for i in range(5):
+            for i in range(self.table.rowCount()):
                 pp_info = self.table.item(i, 2).data(Qt.UserRole)
                 if pp_info is not None:
                     target.append(pp_info)
             # print(target)
             # a dialog to input the name
-            detail_text = "\n".join([f"{部位ID_名称_map[pp[2]]}：{core.formatPPInfo(pp)}" for pp in target])
+            detail_text = "\n".join([f"{MHWData.部位ID_名称_map[pp[2]]}：{core.formatPPInfo(pp)}" for pp in target])
             dialog = InputDialog("输入预设保存名称", details=detail_text)
             if dialog.exec_() != QDialog.Accepted:
                 return
@@ -817,4 +825,4 @@ class ModMixerWindow(QWidget):
             if self.main_window:
                 self.main_window.refreshModList()
         except Exception as e:
-            QMessageBox.critical(self, "错误", "导出失败！\n"+traceback.format_exc())
+            QMessageBox.critical(self, "错误", "导出失败！\n" + traceback.format_exc())

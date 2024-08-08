@@ -17,10 +17,7 @@ import vdf
 from sortedcontainers import SortedSet
 
 from FileTools import MRL3File, EPV3File, FileSystemZipWrapper, SevenZipZipWrapper
-
-部位ID_名称_map = {0: '头盔', 1: '身体', 2: '护手', 3: '腰部', 4: '护腿'}
-部位ID_路径_map = {0: 'helm', 1: 'body', 2: 'arm', 3: 'wst', 4: 'leg'}
-部位路径_ID_map = {v: k for k, v in 部位ID_路径_map.items()}
+from MHWData import 部位ID_路径_map, 部位路径_ID_map
 
 regex_pp = re.compile(
     r"nativePC/pl/(?P<prefix>[mf])_equip/pl(?P<address>\d{3}_\d{4})/(?P<part>arm|body|helm|leg|wst)")
@@ -166,8 +163,7 @@ def output_single_pl_zip(in_zip_path, rep_info_list, zip_out, files_modified: se
             for i in partId_list:
                 out = extract_zip_part_to_zip(zip_in, zip_out, in_pl_info, out_pl_info, i,
                                               in_content_root=in_content_root)
-                if out:
-                    files_modified.update(out)
+                files_modified.update(out)
 
 
 def single_pl_zip(in_zip_path, rep_info_list, out_zip_path, info_io=sys.stdout, in_content_root=""):
@@ -536,19 +532,19 @@ class ManagerCore:
         mod_zip_src = self.modGetZipPath(mod_name)
         rep_info = self.modGetRepInfo(mod_name)
         mod_files = single_pl_folder(mod_zip_src, rep_info, game_root)
+        # print(mod_files)
         # check conflict
+        conflict_mods = []
+        for name, info in self.getLoadedModDict().items():
+            loaded_files = set(info["loaded_file_list"])
+            size0 = len(loaded_files)
+            loaded_files.difference_update(mod_files)
+            if size0 != len(loaded_files):
+                conflict_mods.append(name)
+                info["loaded_file_list"] = list(loaded_files)
+        if conflict_mods:
+            print(f"警告：<{mod_name}>与已加载的<{','.join(conflict_mods)}>存在冲突，已覆盖文件", file=output_io)
 
-        # new_files = get_extract_filenames(zip_file_path, mod_info["pl_info"], mod_info["pl_target_info"])
-        # new_files = set(filter(lambda x: not x.endswith("/"), new_files))
-        # for name, info in self.getLoadedModDict().items():
-        #     loaded_files = set(info["loaded_file_list"])
-        #     if any(f in new_files for f in loaded_files):
-        #         print(f"错误：<{mod_name}>与已加载的<{name}>存在冲突，无法加载", file=output_io)
-        #         return
-
-        # print(rep_info)
-        # mod_files = extract_known_zip_to_target(zip_file_path, game_root, mod_info["pl_info"],
-        #                                         mod_info["pl_target_info"])
         mod_info["loaded"] = True
         mod_info["loaded_file_list"] = list(mod_files)
         print(f"<{mod_name}>加载完毕", file=output_io)

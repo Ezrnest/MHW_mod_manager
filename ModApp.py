@@ -16,7 +16,7 @@ from PyQt5.QtCore import Qt, QPoint
 import MHWData
 from ModWindows import SelectorDialog, InputDialog, SelectorDetailedListDialog, LoadedModsDetailDialog, \
     ModEditorWindow, CheckboxTableWidgetItem, buildPlSelectionDialog, ModMixerWindow, buildPresetSelectionDialog
-from ManagerCore import ManagerCore, 部位ID_路径_map, 部位ID_名称_map, ppInfoDecode, ppInfoEncode
+from ManagerCore import ManagerCore, ppInfoDecode, ppInfoEncode
 
 # noinspection PyUnresolvedReferences
 import resources_rc

@@ -1,1 +1,1 @@
-pyinstaller --onefile --windowed --icon=Miyu.ico ModApp.py
+pyinstaller --name="MHW外观mod加载器" --onefile --windowed --icon=data/Miyu.ico ModApp.py
