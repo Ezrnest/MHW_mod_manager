@@ -158,9 +158,6 @@ class SelectorDialog(QDialog):
 
 
 class SelectorDetailedListDialog(QDialog):
-    """
-    A selector dialog with a list with key value, and details that will be shown at the right side when selected
-    """
 
     def __init__(self, item_list, title="选择"):
         super().__init__()
@@ -178,7 +175,10 @@ class SelectorDetailedListDialog(QDialog):
         h_layout = QHBoxLayout()
 
         list_layout = QVBoxLayout()
-        list_layout.addWidget(QLabel(""))
+        if len(self.item_list) == 0:
+            list_layout.addWidget(QLabel("(请在模组的详情/编辑界面设置预设套装)"))
+        else:
+            list_layout.addWidget(QLabel("预设套装"))
         list_widget = QListWidget(self)
         self.list = list_widget
         list_widget.itemClicked.connect(self.show_details)
@@ -202,6 +202,7 @@ class SelectorDetailedListDialog(QDialog):
         select_button = QPushButton("确认", self)
         select_button.clicked.connect(self.get_select)
         button_layout.addWidget(select_button)
+        # set the focus to the select button
 
         cancel_button = QPushButton("取消", self)
         cancel_button.clicked.connect(self.reject)
@@ -280,7 +281,7 @@ class LoadedModsDetailDialog(QWidget):
         self.setLayout(layout)
         try:
             self.populateTable()
-        except Exception as e:
+        except:
             traceback.print_exc()
         mergeTableCells(self.table)
         self.table.setSortingEnabled(True)
@@ -337,6 +338,7 @@ def buildPresetSelectionDialog(core: ManagerCore, title="选择预设"):
 class ModEditorWindow(QDialog):
     def __init__(self, mod_name: str, core: ManagerCore, parent=None):
         super().__init__(parent)
+        self.table = None
         self.other_info_edit = None
         self.setWindowTitle("编辑模组")
         self.resize(400, 400)
@@ -470,19 +472,15 @@ class ModEditorWindow(QDialog):
             dialog = buildPlSelectionDialog(self.core)
         if dialog.exec_() != QDialog.Accepted:
             return
-        try:
-            sel_pre, sel_adr = dialog.selected_list
-            for row in selected_rows:
-                part_id = self.table.item(row, 0).data(Qt.UserRole)[2]
-                pp_info = (sel_pre, sel_adr, part_id)
-                text = self.core.formatPPInfo(pp_info)
-                item = QTableWidgetItem(text)
-                item.setData(Qt.UserRole, pp_info)
-                print(pp_info)
-                self.table.setItem(row, selected_col, item)
-        except Exception as e:
-            traceback.print_exc()
-
+        sel_pre, sel_adr = dialog.selected_list
+        for row in selected_rows:
+            part_id = self.table.item(row, 0).data(Qt.UserRole)[2]
+            pp_info = (sel_pre, sel_adr, part_id)
+            text = self.core.formatPPInfo(pp_info)
+            item = QTableWidgetItem(text)
+            item.setData(Qt.UserRole, pp_info)
+            # print(pp_info)
+            self.table.setItem(row, selected_col, item)
         # mergeTableCells(self.table)
 
     def add_preset(self):
@@ -505,27 +503,23 @@ class ModEditorWindow(QDialog):
             traceback.print_exc()
 
     def load_preset(self):
-        try:
-            core = self.core
-            dialog = buildPresetSelectionDialog(self.core)
-            dialog.exec_()
-            new_presets = dialog.new_list
-            core.setPredefinedSuite(new_presets)
-            sel = dialog.selected
-            if sel is None:
-                return
-            pp_info_list = [ppInfoDecode(pp_text) for pp_text in sel["target"]]
-            for part_id in range(5):
-                for pp in pp_info_list:
-                    if pp[2] != part_id:
-                        continue
-                    item = QTableWidgetItem(core.formatPPInfo(pp))
-                    item.setData(Qt.UserRole, pp)
-                    self.table.setItem(part_id, 1, item)
-                    break
-        except Exception as e:
-            traceback.print_exc()
-        pass
+        core = self.core
+        dialog = buildPresetSelectionDialog(self.core)
+        dialog.exec_()
+        new_presets = dialog.new_list
+        core.setPredefinedSuite(new_presets)
+        sel = dialog.selected
+        if sel is None:
+            return
+        pp_info_list = [ppInfoDecode(pp_text) for pp_text in sel["target"]]
+        for part_id in range(5):
+            for pp in pp_info_list:
+                if pp[2] != part_id:
+                    continue
+                item = QTableWidgetItem(core.formatPPInfo(pp))
+                item.setData(Qt.UserRole, pp)
+                self.table.setItem(part_id, 1, item)
+                break
 
     def set_target(self):
         table = self.table
@@ -755,7 +749,7 @@ class ModMixerWindow(QWidget):
                 pp_info = self.table.item(i, 2).data(Qt.UserRole)
                 if pp_info is not None:
                     target.append(pp_info)
-            print(target)
+            # print(target)
             # a dialog to input the name
             detail_text = "\n".join([f"{部位ID_名称_map[pp[2]]}：{core.formatPPInfo(pp)}" for pp in target])
             dialog = InputDialog("输入预设保存名称", details=detail_text)
@@ -763,7 +757,7 @@ class ModMixerWindow(QWidget):
                 return
             name = dialog.text
             core.getPresetSuite().append({"name": name, "target": [ppInfoEncode(pp) for pp in target]})
-        except Exception as e:
+        except:
             traceback.print_exc()
 
     def load_preset(self):

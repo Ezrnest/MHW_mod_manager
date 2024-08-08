@@ -3,8 +3,10 @@ import shutil
 import io
 import os
 import sys
+import traceback
 import winreg
 import zipfile
+from typing import Sequence, List, Literal
 from zipfile import ZipFile
 import collections
 import re
@@ -120,7 +122,7 @@ def extract_zip_part_to_zip(zip_in, zip_out, in_pl_info, out_pl_info, part_id, i
     return out_files
 
 
-def open_folder_or_zip(file_path, mode="r", compression=zipfile.ZIP_DEFLATED):
+def open_folder_or_zip(file_path: str, mode: Literal["r", "w", "x", "a"] = "r", compression=zipfile.ZIP_DEFLATED):
     if os.path.isdir(file_path):
         return FileSystemZipWrapper(file_path, mode=mode, compression=compression)
     elif file_path.endswith(".zip"):
@@ -133,11 +135,11 @@ def open_folder_or_zip(file_path, mode="r", compression=zipfile.ZIP_DEFLATED):
 
 def analyze_pl(file_path):
     with open_folder_or_zip(file_path, "r") as zip_in:
-        all_files = sorted(zip_in.namelist(), key=len)
+        # noinspection PyTypeChecker
+        all_files: list[str] = sorted(zip_in.namelist(), key=len)
     # find the first nativePC/
     root_folder = None
     for e in all_files:
-        # check whether e contains a folder named nativePC
         if e.startswith("nativePC/"):
             root_folder = ""
             break
@@ -217,7 +219,7 @@ def process_simple_pl_zip(in_zip_path, out_path, target_pl_info=("m", "105_0000"
         single_pl_folder(in_zip_path, rep_info_list, out_path, info_io=info_io, in_content_root=in_content_root)
 
 
-def cleanup_files(mod_files, root_folder):
+def cleanup_files(mod_files: Sequence[str], root_folder: str):
     # sort by length in descending order so that subfolders are processed first
     mod_files = sorted([f for f in mod_files if f.startswith("nativePC/")], key=len, reverse=True)
 
@@ -234,22 +236,22 @@ def cleanup_files(mod_files, root_folder):
             # print(f"Removing {file}")
 
 
-def findAvailableFilename(folder, prefix="", suffix=".zip"):
+def findAvailableFilename(folder, prefix="Mod_", suffix=".zip"):
     files = set(os.listdir(folder))
     for i in range(1, 2 ** 31):
-        new_file = f"mod_{i}{suffix}"
+        new_file = f"{prefix}{i}{suffix}"
         if new_file not in files:
             return new_file
     return None
 
 
-def find_top_subfolders(root_folder, target_name):
+def find_top_subfolders(root_folder, target_name) -> list[str]:
     result = []
     for dirpath, dirnames, filenames in os.walk(root_folder):
         # Check if target_name is in the current list of subdirectories
         if target_name in dirnames:
             # Append the path of the found subfolder
-            result.append(os.path.join(dirpath, target_name))
+            result.append(os.path.join(str(dirpath), target_name))
             # Remove the found folder from the list to prevent deeper search within it
             dirnames.remove(target_name)
     return result
@@ -408,9 +410,9 @@ class ManagerCore:
                 return
 
         content_root, pp_info_set = analyze_pl(source_path)
-        print(content_root, pp_info_set)
+        # print(content_root, pp_info_set)
         if len(pp_info_set) == 0:
-            print(f"错误：<{mod_name}>中未找到有效的防具文件", file=output_io)
+            print(f"警告：<{mod_name}>中未找到有效的防具文件，跳过", file=output_io)
             return
         # copy the zip file to the mod folder
         os.makedirs(ManagerCore.PATH_MODS_FOLDER, exist_ok=True)
@@ -424,9 +426,15 @@ class ManagerCore:
             "rep_info": rep_info
         }
         storage_path = os.path.join(ManagerCore.PATH_MODS_FOLDER, f"{mod_name}.zip")
-        res = mixture_pl_zip([info_dict], storage_path, info_io=output_io)
-        if res is None:
-            print(f"处理模组[{mod_name}]失败", file=output_io)
+        if os.path.exists(storage_path):
+            storage_path = findAvailableFilename(ManagerCore.PATH_MODS_FOLDER, suffix=".zip")
+        try:
+            res = mixture_pl_zip([info_dict], storage_path, info_io=output_io)
+            if res is None:
+                print(f"错误：添加<{mod_name}>失败", file=output_io)
+                return
+        except:
+            traceback.print_exc(file=output_io)
             return
         self.modInitConfig(mod_name, pp_info_set)
         print(f"<{mod_name}>已添加", file=output_io)
@@ -525,8 +533,9 @@ class ManagerCore:
                 print(f"<{mod_name}>已加载，不再重新加载", file=output_io)
                 return
         # extract the zip file
-        zip_file_path = os.path.join(ManagerCore.PATH_MODS_FOLDER, f"{mod_name}.zip")
-
+        mod_zip_src = self.modGetZipPath(mod_name)
+        rep_info = self.modGetRepInfo(mod_name)
+        mod_files = single_pl_folder(mod_zip_src, rep_info, game_root)
         # check conflict
 
         # new_files = get_extract_filenames(zip_file_path, mod_info["pl_info"], mod_info["pl_target_info"])
@@ -536,9 +545,8 @@ class ManagerCore:
         #     if any(f in new_files for f in loaded_files):
         #         print(f"错误：<{mod_name}>与已加载的<{name}>存在冲突，无法加载", file=output_io)
         #         return
-        rep_info = self.modGetRepInfo(mod_name)
+
         # print(rep_info)
-        mod_files = single_pl_folder(zip_file_path, rep_info, game_root)
         # mod_files = extract_known_zip_to_target(zip_file_path, game_root, mod_info["pl_info"],
         #                                         mod_info["pl_target_info"])
         mod_info["loaded"] = True
@@ -600,7 +608,7 @@ class ManagerCore:
             print(f"<{mod_name}>目标防具设置为{self.formatPlInfo(target_pl_info)}", file=output_io)
         self.save_config()
 
-    def modsSetPPTarget(self,mod_name_list,target_pp_dict,info_io=sys.stdout):
+    def modsSetPPTarget(self, mod_name_list, target_pp_dict, info_io=sys.stdout):
         for mod_name in mod_name_list:
             if not self.modExists(mod_name):
                 print(f"<{mod_name}>不存在", file=info_io)
@@ -631,16 +639,19 @@ class ManagerCore:
 
         mod_info = self.config["mods"][mod_name]
         del self.config["mods"][mod_name]
-
-        new_filename = f"{new_name}.zip"
-        old_file_path = os.path.join(ManagerCore.PATH_MODS_FOLDER, mod_info["filename"])
-        try:
-            os.rename(old_file_path, os.path.join(ManagerCore.PATH_MODS_FOLDER, new_filename))
-        except OSError:
-            new_filename = findAvailableFilename(ManagerCore.PATH_MODS_FOLDER)
-            os.rename(old_file_path, os.path.join(ManagerCore.PATH_MODS_FOLDER, new_filename))
-        mod_info["filename"] = new_filename
         self.config["mods"][new_name] = mod_info
+
+        # keep the original file name
+        # new_filename = f"{new_name}.zip"
+        # old_file_path = os.path.join(ManagerCore.PATH_MODS_FOLDER, mod_info["filename"])
+        # try:
+        #     os.rename(old_file_path, os.path.join(ManagerCore.PATH_MODS_FOLDER, new_filename))
+        # except OSError:
+        #     new_filename = findAvailableFilename(ManagerCore.PATH_MODS_FOLDER)
+        #     os.rename(old_file_path, os.path.join(ManagerCore.PATH_MODS_FOLDER, new_filename))
+        # mod_info["filename"] = new_filename
+        #
+
         print(f"<{mod_name}>已重命名为<{new_name}>", file=info_io)
         self.save_config()
 

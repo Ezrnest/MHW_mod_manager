@@ -1,6 +1,7 @@
 import os.path
 import zipfile
 from pathlib import Path
+from typing import Sequence, List
 
 from sortedcontainers import SortedSet
 
@@ -113,13 +114,15 @@ class EPV3File(SpecialFileWithReferences):
     def get_ref_paths(self):
         return add_ref_path_suffix(self.references, ".efx")
 
-def listAllFiles(folder):
+
+def listAllFiles(folder) -> List[str]:
     relative_files = []
     for root, dirs, file in os.walk(folder):
+        root = str(root)
         for f in file:
             relative_files.append(os.path.relpath(os.path.join(root, f), folder).replace("\\", "/"))
         for d in dirs:
-            relative_files.append(os.path.relpath(os.path.join(root, d), folder).replace("\\", "/")+"/")
+            relative_files.append(os.path.relpath(os.path.join(root, d), folder).replace("\\", "/") + "/")
     return relative_files
 
 
@@ -129,7 +132,7 @@ class FileSystemZipWrapper:
         self.files = SortedSet()
         self.mode = mode
         if 'r' in mode:
-            self.files = listAllFiles(root_folder)
+            self.files = SortedSet(listAllFiles(root_folder))
 
     def __enter__(self):
         return self
@@ -150,18 +153,19 @@ class FileSystemZipWrapper:
         with open(dest, 'wb') as f:
             f.write(data)
 
-    def read(self,path):
+    def read(self, path):
         dest = self.root_folder / path
         if dest.is_dir():
             return b''
         with open(self.root_folder / path, 'rb') as f:
             return f.read()
 
-    def namelist(self):
+    def namelist(self) -> Sequence[str]:
         return self.files
 
 
 from py7zr import SevenZipFile
+
 
 class SevenZipZipWrapper:
     def __init__(self, path, mode='r', *args, **kwargs):
@@ -176,13 +180,14 @@ class SevenZipZipWrapper:
                 if info.is_directory and not name.endswith("/"):
                     name += "/"
                 self.filenames.append(name)
+
     def init_files(self):
         if self.file_dict is not None:
             return
         path = self.path
         file_dict = {}
         with SevenZipFile(path, "r") as z:
-            for k,v in z.readall().items():
+            for k, v in z.readall().items():
                 file_dict[k] = v.read()
         # add directories
         for name in self.filenames:
@@ -200,7 +205,7 @@ class SevenZipZipWrapper:
     def writestr(self, path, data):
         raise ValueError("Writing to 7z files is not supported")
 
-    def read(self,path):
+    def read(self, path):
         self.init_files()
         return self.file_dict[path]
 

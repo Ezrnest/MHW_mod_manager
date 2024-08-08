@@ -14,7 +14,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QPoint
 
 import MHWData
-from SuppWindows import SelectorDialog, InputDialog, SelectorDetailedListDialog, LoadedModsDetailDialog, \
+from ModWindows import SelectorDialog, InputDialog, SelectorDetailedListDialog, LoadedModsDetailDialog, \
     ModEditorWindow, CheckboxTableWidgetItem, buildPlSelectionDialog, ModMixerWindow, buildPresetSelectionDialog
 from ManagerCore import ManagerCore, 部位ID_路径_map, 部位ID_名称_map, ppInfoDecode, ppInfoEncode
 
@@ -471,7 +471,6 @@ class ModManagerApp(QMainWindow):
         QMessageBox.information(self, "卸载模组", info_io.getvalue())
 
     def reload_selected_mods(self, mod_names=None):
-
         if mod_names is None:
             mod_names = self.get_selected_mod_names()
         mod_names = [name for name in mod_names if self.core.modIsLoaded(name)]
@@ -545,8 +544,11 @@ class ModManagerApp(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon(":/Miyu.ico"))
-    main_window = ModManagerApp()
-    main_window.show()
-    sys.exit(app.exec_())
+    try:
+        app = QApplication(sys.argv)
+        app.setWindowIcon(QIcon(":/Miyu.ico"))
+        main_window = ModManagerApp()
+        main_window.show()
+        sys.exit(app.exec_())
+    except Exception as e:
+        traceback.print_exc()
