@@ -1,7 +1,7 @@
 import os.path
 import zipfile
 from pathlib import Path
-from typing import Sequence, List
+from typing import Sequence, List, Collection
 
 from sortedcontainers import SortedSet
 
@@ -160,7 +160,7 @@ class FileSystemZipWrapper:
         with open(self.root_folder / path, 'rb') as f:
             return f.read()
 
-    def namelist(self) -> Sequence[str]:
+    def namelist(self) -> Collection[str]:
         return self.files
 
 
@@ -173,13 +173,13 @@ class SevenZipZipWrapper:
             raise ValueError("Only read mode is supported for 7z files")
         self.path = path
         self.file_dict = None
-        self.filenames = []
+        self.filenames = set()
         with SevenZipFile(path, "r") as z:
             for info in z.list():
                 name = info.filename
                 if info.is_directory and not name.endswith("/"):
                     name += "/"
-                self.filenames.append(name)
+                self.filenames.add(name)
 
     def init_files(self):
         if self.file_dict is not None:

@@ -14,12 +14,34 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QPoint, QRect
 
 import MHWData
-from ModWindows import SelectorDialog, InputDialog, SelectorDetailedListDialog, LoadedModsDetailDialog, \
-    ModEditorWindow, CheckboxTableWidgetItem, buildPlSelectionDialog, ModMixerWindow, buildPresetSelectionDialog
+from ModWindows import SelectorDetailedListDialog, LoadedModsDetailDialog, \
+    ModEditorWindow, buildPlSelectionDialog, ModMixerWindow, buildPresetSelectionDialog
 from ManagerCore import ManagerCore, ppInfoDecode, ppInfoEncode
 
 # noinspection PyUnresolvedReferences
 import resources_rc
+from Utils import getConfigGeo, setConfigGeo
+
+
+class CheckboxTableWidgetItem(QTableWidgetItem):
+    def __init__(self, checkbox):
+        super().__init__()
+        self.checkbox = checkbox
+
+    def __lt__(self, other):
+        if isinstance(other, CheckboxTableWidgetItem):
+            return self.checkbox.isChecked() > other.checkbox.isChecked()
+        return super().__lt__(other)
+
+
+from PyQt5.QtWidgets import QTableWidget, QAbstractItemView
+
+from PyQt5.QtCore import Qt, QMimeData, QPoint
+from PyQt5.QtGui import QDrag
+from PyQt5.QtWidgets import QTableWidget, QAbstractItemView
+
+import sys
+from PyQt5.QtWidgets import QApplication, QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView
 
 
 class ModManagerApp(QMainWindow):
@@ -43,20 +65,25 @@ class ModManagerApp(QMainWindow):
             traceback.print_exc()
 
     def loadUIConfig(self):
-        size = self.core.getConfigEntry("ui", "main_window_geo")
-        if size is not None:
-            self.setGeometry(QRect(*size))
-        column_widths = self.core.getConfigEntry("ui", "main_window_table_widths")
+        g = getConfigGeo(self.core, "ui", "main", "geo")
+        if g is not None:
+            self.setGeometry(g)
+        column_widths = self.core.getConfigEntry("ui", "main", "table_widths")
         if column_widths is not None:
             for i, width in enumerate(column_widths):
                 self.table.setColumnWidth(i, width)
+        # load search text
+        search_text = self.core.getConfigEntry("ui", "main", "search_text")
+        if search_text is not None:
+            self.search_bar.setText(search_text)
 
     def closeEvent(self, a0):
         geo = self.geometry()
-        g_tuple = (geo.x(), geo.y(), geo.width(), geo.height())
-        self.core.setConfigEntry(g_tuple,"ui", "main_window_geo")
+        setConfigGeo(self.core, geo, "ui", "main", "geo")
         column_widths = [self.table.columnWidth(i) for i in range(self.table.columnCount())]
-        self.core.setConfigEntry(column_widths,"ui", "main_window_table_widths")
+        self.core.setConfigEntry(column_widths, "ui", "main", "table_widths")
+        search_text = self.search_bar.text()
+        self.core.setConfigEntry(search_text, "ui", "main", "search_text")
 
         self.core.save_config()
         super().closeEvent(a0)
@@ -149,7 +176,7 @@ class ModManagerApp(QMainWindow):
 
         # Create a search bar
         self.search_bar = QLineEdit(self)
-        self.search_bar.setPlaceholderText("筛选模组名称")
+        self.search_bar.setPlaceholderText("筛选模组名称(逗号分割)")
         self.search_bar.textChanged.connect(self.filter_mod_list)
 
         # main layout
@@ -169,7 +196,6 @@ class ModManagerApp(QMainWindow):
 
     def refreshModList(self):
         try:
-
             man = self.core
             mods = self.core.getModDict()
             table = self.table
@@ -215,15 +241,20 @@ class ModManagerApp(QMainWindow):
 
     def filter_mod_list(self):
         search_text = self.search_bar.text().lower()
-
-        for row in range(self.table.rowCount()):
-            mod_name = self.table.item(row, 1).text().lower()
-            mod_comment = self.table.item(row, 3).text().lower()
-
-            if search_text in mod_name or search_text in mod_comment:
-                self.table.setRowHidden(row, False)
+        # a comma separated list of search terms
+        search_text_list = search_text.replace("，", ",").split(",")
+        # remove leading and trailing spaces
+        search_text_list = [text.strip() for text in search_text_list]
+        table = self.table
+        for row in range(table.rowCount()):
+            mod_name = table.item(row, 1).text().lower()
+            mod_comment = table.item(row, 3).text().lower()
+            show_row = all(text in mod_name for text in search_text_list) or all(
+                text in mod_comment for text in search_text_list)
+            if show_row:
+                table.setRowHidden(row, False)
             else:
-                self.table.setRowHidden(row, True)
+                table.setRowHidden(row, True)
 
     def mod_list_item_modified(self, item):
         row, col = item.row(), item.column()
@@ -388,15 +419,13 @@ class ModManagerApp(QMainWindow):
     def set_game_path(self):
         game_path = QFileDialog.getExistingDirectory(self, "选择游戏根目录",
                                                      directory=self.core.config.get("game_root"))
-        if game_path:
-            try:
-                if self.core.is_game_root_valid(game_path):
-                    self.core.set_game_root(game_path)
-                    QMessageBox.information(self, "提示", "游戏路径设置成功")
-                else:
-                    QMessageBox.information(self, "提示", "游戏路径不正确，请重新选择")
-            except Exception as e:
-                traceback.print_exc()
+        if not game_path:
+            return
+        if self.core.is_game_root_valid(game_path):
+            self.core.set_game_root(game_path)
+            QMessageBox.information(self, "提示", "游戏路径设置成功")
+        else:
+            QMessageBox.information(self, "提示", "游戏路径不正确，请重新选择")
 
     def toggle_mod(self, name, box, state):
         if state == self.core.modIsLoaded(name):
@@ -405,7 +434,6 @@ class ModManagerApp(QMainWindow):
         try:
             if state:
                 self.core.modLoad(name, output_io=output)
-                # cancel the loading if the mod is not loaded
             else:
                 self.core.modUnload(name, output_io=output)
         except Exception as e:
@@ -533,7 +561,7 @@ class ModManagerApp(QMainWindow):
             self.core.addRecentPl(sel_pl)
             mod_names = self.get_selected_mod_names()
             text = io.StringIO()
-            self.core.modSetTarget(mod_names, sel_pl, info_io=text)
+            self.core.modSetTarget(mod_names, sel_pl, output_io=text)
             QMessageBox.information(self, "设置替换装备", text.getvalue())
             self.refreshModList()
             self.reload_selected_mods(mod_names)

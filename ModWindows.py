@@ -2,13 +2,14 @@ import io
 import os
 import traceback
 
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QRect
 from PyQt5.QtWidgets import QMessageBox, QPushButton, QHBoxLayout, QTextEdit, QLabel, QLineEdit, QVBoxLayout, QDialog, \
     QTableWidgetItem, QListWidgetItem, QListWidget, QRadioButton, QTableWidget, QWidget, QHeaderView, QMenu, QAction, \
     QFileDialog, QSizePolicy, QCheckBox
 
 import MHWData
 from ManagerCore import ManagerCore, ppInfoDecode, ppInfoEncode
+from Utils import getConfigGeo, setConfigGeo
 
 
 class InputDialog(QDialog):
@@ -67,7 +68,7 @@ def mergeTableCells(table):
 
 
 class SelectorDialog(QDialog):
-    def __init__(self, selection_terms, title="选择", after_selection=None):
+    def __init__(self, selection_terms, core: ManagerCore = None, title="选择", after_selection=None):
         super().__init__()
         self.setWindowTitle(title)
         self.selection_terms = selection_terms
@@ -75,6 +76,15 @@ class SelectorDialog(QDialog):
         self.selected_list = None
         self.after_selection = after_selection
         self.initUI()
+        if core is not None:
+            self.core = core
+            g = getConfigGeo(core, "ui", "selector", "geo")
+            if g:
+                self.setGeometry(g)
+
+    def closeEvent(self, a0):
+        setConfigGeo(self.core, self.geometry(), "ui", "selector", "geo")
+        super().closeEvent(a0)
 
     @staticmethod
     def addToList(list_widget, key, value):
@@ -253,15 +263,6 @@ class SelectorDetailedListDialog(QDialog):
         self.accept()
 
 
-class CheckboxTableWidgetItem(QTableWidgetItem):
-    def __init__(self, checkbox):
-        super().__init__()
-        self.checkbox = checkbox
-
-    def __lt__(self, other):
-        if isinstance(other, CheckboxTableWidgetItem):
-            return self.checkbox.isChecked() > other.checkbox.isChecked()
-        return super().__lt__(other)
 
 
 class LoadedModsDetailDialog(QWidget):
@@ -272,6 +273,13 @@ class LoadedModsDetailDialog(QWidget):
         self.resize(600, 400)
 
         self.initUI()
+        g = getConfigGeo(core, "ui", "mod_detail", "geo")
+        if g:
+            self.setGeometry(g)
+
+    def closeEvent(self, a0):
+        setConfigGeo(self.core, self.geometry(), "ui", "mod_detail", "geo")
+        super().closeEvent(a0)
 
     def initUI(self):
         layout = QVBoxLayout()
@@ -327,7 +335,7 @@ def buildPlSelectionDialog(core: ManagerCore, title="选择替换装备"):
     if len(recent_pl) > 0 and recent_pl[0][0] == "f":
         term_gender = list(reversed(term_gender))
     sel_terms = [("性别", "radio", term_gender), ("替换装备", "list", pl_table)]
-    dialog = SelectorDialog(sel_terms, title, after_selection=lambda sel, c=core: c.addRecentPl(sel))
+    dialog = SelectorDialog(sel_terms, core, title, after_selection=lambda sel, c=core: c.addRecentPl(sel))
     return dialog
 
 
@@ -349,7 +357,7 @@ class ModEditorWindow(QDialog):
         self.table = None
         self.other_info_edit = None
         self.setWindowTitle("编辑模组")
-        self.resize(400, 400)
+        # self.resize(400, 400)
 
         self.name_edit = None
         self.mod_name = mod_name
@@ -357,6 +365,14 @@ class ModEditorWindow(QDialog):
 
         self.initUI()
         self.create_context_menu()
+        self.adjustSize()
+        g = getConfigGeo(core, "ui", "mod_editor", "geo")
+        if g:
+            self.setGeometry(g)
+
+    def closeEvent(self, a0):
+        setConfigGeo(self.core, self.geometry(), "ui", "mod_editor", "geo")
+        super().closeEvent(a0)
 
     def initUI(self):
         info = self.core.modGetInfo(self.mod_name)
@@ -377,9 +393,8 @@ class ModEditorWindow(QDialog):
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table = table
         self.populateTable()
-        # table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # table.adjustSize()
-        table.setFixedHeight(180)
+        table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        table.adjustSize()
 
         layout.addWidget(table)
 
@@ -475,7 +490,7 @@ class ModEditorWindow(QDialog):
             table = [(k, f"{v}({k})") for k, v in MHWData.PP_MAPPING[part].items()]
             selection_items = [("性别", "radio", [("m", "男"), ("f", "女")]),
                                (f"替换{MHWData.部位ID_名称_map[part]}", "list", table)]
-            dialog = SelectorDialog(selection_items, "选择替换装备")
+            dialog = SelectorDialog(selection_items, self.core, "选择替换装备")
         else:
             dialog = buildPlSelectionDialog(self.core)
         if dialog.exec_() != QDialog.Accepted:
@@ -583,10 +598,17 @@ class ModMixerWindow(QWidget):
         self.context_menu = None
         self.export_folder = None
         self.setWindowTitle("模组自定义导出")
-        self.resize(600, 400)
 
         self.initUI()
         self.create_context_menu()
+
+        g = getConfigGeo(core, "ui", "mod_mixer", "geo")
+        if g:
+            self.setGeometry(g)
+
+    def closeEvent(self, a0):
+        setConfigGeo(self.core, self.geometry(), "ui", "mod_mixer", "geo")
+        super().closeEvent(a0)
 
     def initUI(self):
         main_layout = QVBoxLayout()
@@ -702,7 +724,7 @@ class ModMixerWindow(QWidget):
         else:
             name = "替换装备"
         selection_items = [(name, "list", table)]
-        dialog = SelectorDialog(selection_items, "选择源模组")
+        dialog = SelectorDialog(selection_items, self.core, "选择源模组")
         if dialog.exec_() != QDialog.Accepted:
             return
         selection = dialog.selected_list
@@ -718,7 +740,7 @@ class ModMixerWindow(QWidget):
             table = [(k, f"{v}({k})") for k, v in MHWData.PP_MAPPING[part].items()]
             selection_items = [("性别", "radio", [("m", "男"), ("f", "女")]),
                                (f"替换{MHWData.部位ID_名称_map[part]}", "list", table)]
-            dialog = SelectorDialog(selection_items, "选择替换装备")
+            dialog = SelectorDialog(selection_items, self.core, "选择替换装备")
         else:
             dialog = buildPlSelectionDialog(self.core)
         if dialog.exec_() != QDialog.Accepted:
