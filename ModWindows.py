@@ -44,6 +44,8 @@ class InputDialog(QDialog):
             QMessageBox.warning(self, "错误", "名称不能为空")
 
 
+
+
 def mergeTableCells(table):
     table.clearSpans()
     rows = table.rowCount()

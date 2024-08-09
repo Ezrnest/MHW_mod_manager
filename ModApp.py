@@ -14,6 +14,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QPoint, QRect
 
 import MHWData
+import Utils
 from ModWindows import SelectorDetailedListDialog, LoadedModsDetailDialog, \
     ModEditorWindow, buildPlSelectionDialog, ModMixerWindow, buildPresetSelectionDialog
 from ManagerCore import ManagerCore, ppInfoDecode, ppInfoEncode
@@ -438,7 +439,7 @@ class ModManagerApp(QMainWindow):
                 self.core.modUnload(name, output_io=output)
         except Exception as e:
             traceback.print_exc(file=output)
-        QMessageBox.information(self, "模组", output.getvalue())
+        QMessageBox.information(self,"模组", output.getvalue())
         box.setChecked(self.core.modIsLoaded(name))
 
     def create_context_menu(self):
@@ -507,7 +508,8 @@ class ModManagerApp(QMainWindow):
 
         self.refreshModList()
         progress_dialog.setValue(len(mod_names))
-        QMessageBox.information(self, "加载模组", info_io.getvalue())
+        Utils.information(info_io.getvalue())
+        # QMessageBox.information(self, "加载模组", info_io.getvalue())
 
     def unload_selected_mods(self):
         mod_names = self.get_selected_mod_names()
