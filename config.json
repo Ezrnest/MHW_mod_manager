@@ -1,0 +1,132 @@
+{
+    "game_root": "H:\\SteamLibrary\\steamapps\\common\\Monster Hunter World",
+    "mods": {
+        "example_mod": {
+            "filename": "example_mod.zip",
+            "type": "pl",
+            "pl_info": {
+                "source": [
+                    "f.122_0000.0",
+                    "f.122_0000.1",
+                    "f.122_0000.2",
+                    "f.122_0000.3",
+                    "f.122_0000.4"
+                ],
+                "rep": {
+                    "f.122_0000.0": "f.122_0000.0",
+                    "f.122_0000.1": "f.122_0000.1",
+                    "f.122_0000.2": "f.122_0000.2",
+                    "f.122_0000.3": "f.122_0000.3",
+                    "f.122_0000.4": "f.122_0000.4"
+                }
+            },
+            "date": "2024-08-08",
+            "loaded": true,
+            "loaded_file_list": [],
+            "comments": ""
+        },
+        "example_mod2": {
+            "filename": "example_mod.zip",
+            "type": "pl",
+            "pl_info": {
+                "source": [
+                    "f.122_0000.0",
+                    "f.122_0000.1",
+                    "f.122_0000.2",
+                    "f.122_0000.3",
+                    "f.122_0000.4"
+                ],
+                "rep": {
+                    "f.122_0000.0": "f.122_0000.0",
+                    "f.122_0000.1": "f.122_0000.1",
+                    "f.122_0000.2": "f.122_0000.2",
+                    "f.122_0000.3": "f.122_0000.3",
+                    "f.122_0000.4": "f.122_0000.4"
+                }
+            },
+            "date": "2024-08-08",
+            "loaded": true,
+            "loaded_file_list": [
+                "nativePC/pl/f_equip/Sil_tex/Miyu/",
+                "nativePC/pl/f_equip/Sil_tex/Miyu/BLACK.tex",
+                "nativePC/pl/f_equip/Sil_tex/Miyu/BML.tex",
+                "nativePC/pl/f_equip/Sil_tex/Miyu/CMM.tex",
+                "nativePC/pl/f_equip/Sil_tex/Miyu/EM.tex",
+                "nativePC/pl/f_equip/Sil_tex/Miyu/FM.tex",
+                "nativePC/pl/f_equip/Sil_tex/Miyu/NM.tex",
+                "nativePC/pl/f_equip/Sil_tex/Miyu/RMT.tex",
+                "nativePC/pl/f_equip/Sil_tex/Miyu/XM.tex",
+                "nativePC/pl/f_equip/Sil_tex/Miyu/snow_Col_CMM.tex",
+                "nativePC/pl/f_equip/pl122_0000/arm/",
+                "nativePC/pl/f_equip/pl122_0000/arm/mod/",
+                "nativePC/pl/f_equip/pl122_0000/arm/mod/f_arm122_0000.ccl",
+                "nativePC/pl/f_equip/pl122_0000/arm/mod/f_arm122_0000.ctc",
+                "nativePC/pl/f_equip/pl122_0000/arm/mod/f_arm122_0000.mod3",
+                "nativePC/pl/f_equip/pl122_0000/arm/mod/f_arm122_0000.mrl3",
+                "nativePC/pl/f_equip/pl122_0000/body/",
+                "nativePC/pl/f_equip/pl122_0000/body/mod/",
+                "nativePC/pl/f_equip/pl122_0000/body/mod/f_body122_0000.mod3",
+                "nativePC/pl/f_equip/pl122_0000/helm/",
+                "nativePC/pl/f_equip/pl122_0000/helm/mod/",
+                "nativePC/pl/f_equip/pl122_0000/helm/mod/f_helm122_0000.evhl",
+                "nativePC/pl/f_equip/pl122_0000/leg/",
+                "nativePC/pl/f_equip/pl122_0000/leg/mod/",
+                "nativePC/pl/f_equip/pl122_0000/leg/mod/f_leg122_0000.ccl",
+                "nativePC/pl/f_equip/pl122_0000/leg/mod/f_leg122_0000.ctc",
+                "nativePC/pl/f_equip/pl122_0000/leg/mod/f_leg122_0000.mod3",
+                "nativePC/pl/f_equip/pl122_0000/leg/mod/f_leg122_0000.mrl3",
+                "nativePC/pl/f_equip/pl122_0000/wst/",
+                "nativePC/pl/f_equip/pl122_0000/wst/mod/",
+                "nativePC/pl/f_equip/pl122_0000/wst/mod/f_wst122_0000.mod3"
+            ],
+            "comments": "2"
+        },
+        "mod2": {
+            "filename": "example_mod.zip",
+            "type": "pl",
+            "pl_info": {
+                "source": [
+                    "f.122_0000.1",
+                    "f.122_0000.2",
+                    "f.122_0000.3",
+                    "f.122_0000.4"
+                ],
+                "rep": {
+                    "f.122_0000.1": "m.001_0000.1",
+                    "f.122_0000.2": "m.001_0000.2",
+                    "f.122_0000.3": "m.001_0000.3",
+                    "f.122_0000.4": "m.001_0000.4"
+                }
+            },
+            "date": "2024-08-08",
+            "loaded": false,
+            "loaded_file_list": [],
+            "comments": ""
+        }
+    },
+    "history": {},
+    "preset_suite": [
+        {
+            "name": "皮质",
+            "target": [
+                "m.001_0000.0",
+                "m.001_0000.1",
+                "m.001_0000.2",
+                "m.001_0000.3",
+                "m.001_0000.4"
+            ]
+        },
+        {
+            "name": "P-1",
+            "target": [
+                "m.001_0000.1",
+                "m.001_0000.2",
+                "m.001_0000.3",
+                "m.001_0000.4"
+            ]
+        }
+    ],
+    "recent_pl": [
+        "m.001_0000"
+    ]
+}
