@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QT
                              QHBoxLayout, QProgressBar, QProgressDialog, QMenu, QListWidgetItem, QRadioButton, QLabel,
                              QTextEdit, QSizePolicy, QMenuBar)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QRect
 
 import MHWData
 from ModWindows import SelectorDialog, InputDialog, SelectorDetailedListDialog, LoadedModsDetailDialog, \
@@ -20,7 +20,6 @@ from ManagerCore import ManagerCore, ppInfoDecode, ppInfoEncode
 
 # noinspection PyUnresolvedReferences
 import resources_rc
-
 
 
 class ModManagerApp(QMainWindow):
@@ -33,13 +32,32 @@ class ModManagerApp(QMainWindow):
         self.setWindowTitle("MHW 外观模组工具 by mart.")
         self.window_mod_mixer = None
         self.window_loaded_mods_detail = None
-        self.resize(600, 600)
+        self.setGeometry(300, 300, 600, 600)
 
-        self.core = ManagerCore()
+        self.core: ManagerCore = ManagerCore()
 
         self.initUI()
+        try:
+            self.loadUIConfig()
+        except:
+            traceback.print_exc()
+
+    def loadUIConfig(self):
+        size = self.core.getConfigEntry("ui", "main_window_geo")
+        if size is not None:
+            self.setGeometry(QRect(*size))
+        column_widths = self.core.getConfigEntry("ui", "main_window_table_widths")
+        if column_widths is not None:
+            for i, width in enumerate(column_widths):
+                self.table.setColumnWidth(i, width)
 
     def closeEvent(self, a0):
+        geo = self.geometry()
+        g_tuple = (geo.x(), geo.y(), geo.width(), geo.height())
+        self.core.setConfigEntry(g_tuple,"ui", "main_window_geo")
+        column_widths = [self.table.columnWidth(i) for i in range(self.table.columnCount())]
+        self.core.setConfigEntry(column_widths,"ui", "main_window_table_widths")
+
         self.core.save_config()
         super().closeEvent(a0)
 
@@ -60,7 +78,7 @@ class ModManagerApp(QMainWindow):
 
         # create a menu
         menu_mod = QMenu("模组导入", self)
-        add_mod_action = QAction("添加模组zip", self)
+        add_mod_action = QAction("从压缩文件添加", self)
         add_mod_action.triggered.connect(self.add_mod)
         menu_mod.addAction(add_mod_action)
 
@@ -117,8 +135,8 @@ class ModManagerApp(QMainWindow):
         header = table.horizontalHeader()
         # header.setSectionResizeMode(QHeaderView.Stretch)
         header.setSectionResizeMode(QHeaderView.Interactive)
-        header.setSectionResizeMode(0, QHeaderView.Fixed)
-        header.setSectionResizeMode(3, QHeaderView.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
 
         # set the context menu
         table.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -146,8 +164,7 @@ class ModManagerApp(QMainWindow):
         # refresh the mod list
         self.refreshModList()
         table.resizeColumnToContents(1)
-        self.table.setColumnWidth(0, 35)
-        self.table.setColumnWidth(2, 200)
+        table.resizeColumnToContents(2)
         table.sortByColumn(0, Qt.AscendingOrder)
 
     def refreshModList(self):
@@ -226,7 +243,7 @@ class ModManagerApp(QMainWindow):
             comments = item.text()
             self.core.modGetInfo(mod_name)["comments"] = comments
 
-    def mod_table_double_clicked(self,row,col):
+    def mod_table_double_clicked(self, row, col):
         if col != 2:
             return
         self.set_target_selected_mods()
@@ -368,9 +385,9 @@ class ModManagerApp(QMainWindow):
             self.reload_selected_mods([mod_name])
         return
 
-
     def set_game_path(self):
-        game_path = QFileDialog.getExistingDirectory(self, "选择游戏根目录",directory=self.core.config.get("game_root"))
+        game_path = QFileDialog.getExistingDirectory(self, "选择游戏根目录",
+                                                     directory=self.core.config.get("game_root"))
         if game_path:
             try:
                 if self.core.is_game_root_valid(game_path):
@@ -544,7 +561,6 @@ class ModManagerApp(QMainWindow):
             self.reload_selected_mods(mod_names)
         except Exception as e:
             traceback.print_exc()
-
 
 
 if __name__ == "__main__":

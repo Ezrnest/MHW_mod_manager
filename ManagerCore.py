@@ -6,7 +6,7 @@ import sys
 import traceback
 import winreg
 import zipfile
-from typing import Sequence, List, Literal
+from typing import Sequence, List, Literal, Any
 from zipfile import ZipFile
 import collections
 import re
@@ -709,3 +709,17 @@ class ManagerCore:
     #     recent_pp = [pp_info] + [x for x in recent_pp if x != pp_info][:5]
     #     self.config["recent_pp"] = [ppInfoEncode(x) for x in recent_pp]
     #     self.save_config()
+
+    def getConfigEntry(self, *args) -> Any | None:
+        r = self.config
+        for n in args:
+            r = r.get(n)
+            if r is None:
+                return None
+        return r
+
+    def setConfigEntry(self,v, *args):
+        t = self.config
+        for n in args[:-1]:
+            t = t.setdefault(n, {})
+        t[args[-1]] = v
