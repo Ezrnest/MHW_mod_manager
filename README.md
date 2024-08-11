@@ -1,6 +1,6 @@
-# 怪物猎人世界Mod管理器
+# 怪物猎人世界外观Mod管理器
 
-这是一个怪物猎人世界的外观Mod管理器，包含使用Python编写的用户界面。
+这是一个怪物猎人世界的外观Mod管理器，包含使用Python编写的用户界面，方便用户整理外观装备、修改替换等。
 
 # Mod Manager for Monster Hunter: World 
 
